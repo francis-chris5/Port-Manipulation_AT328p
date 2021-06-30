@@ -1,6 +1,10 @@
 
 /**
  * SIZE: 860 Bytes
+ * BITMATH:
+ * |= 1 << x --> put a 1 in bit x of the register
+ * &= ~(1 << x) --> put a not 1 (a.k.a 0) in bit x of the register
+ * ^= 1 << x --> flip the state of bit x in the register
  */
 
   //pin assignments
@@ -22,15 +26,15 @@ uint8_t DUTY_CYCLE_COMP = 75;
 void setup() {
     /**
      * DIGITAL I/O
-     * set Data Direction Register for Port-D to 10100000 so 5 and 7 are output, rest are input
+     * set Data Direction Register for Port-D to 10100000 so 5 and 7 are output, rest are input (see 13.4.2 to 13.4.10 in datasheet)
      */
   DDRD |= 1 << RED;
   DDRD |= 1 << GREEN;
 
     /**
      * HARDWARE INTERRUPTS
-     * set Pin Change Interrupt Control Register to 00000100 so that Pin Change Interrupt Enable 2 listens (PCINT 23 ... 16)
-     * set Pin Change Mask Register 2 to 00000100 so arduino pin 2 can interrupt
+     * set Pin Change Interrupt Control Register to 00000100 so that Pin Change Interrupt Enable 2 listens (PCINT 23 ... 16), (see 12.2.4 in datasheet)
+     * set Pin Change Mask Register 2 to 00000100 so arduino pin 2 can interrupt (see 12.2.6, 12.2.7, and 12.2.8 in datasheet)
      */
   PCICR |= 1 << PCIE2;
   PCMSK2 |= 1 << BUTTON;
@@ -40,10 +44,10 @@ void setup() {
     /**
      * TIMER
      * clear Timer/Counter Control Register 2A of any preset functionality
-     * set Timer/Counter Control Register 2B to 00000100 for a 256 prescalar
+     * set Timer/Counter Control Register 2B to 00000100 for a 256 prescalar (see 17.11.2 and table 14.9 in datasheet)
      * reset Timer/Counter Register
-     * set Output Compare Register 2A to the desired clock pulses --[ (desired_seconds * clock_Hz) / prescalar = desired_pulses ]--
-     * set Timer/Counter 2 Interrupt Mask to 00000010 to enable it
+     * set Output Compare Register 2A to the desired clock pulses --[ (desired_seconds * clock_Hz) / prescalar = desired_pulses ]-- (see 17.5 and 17.11.2 in datasheet)
+     * set Timer/Counter 2 Interrupt Mask to 00000010 to enable it (see 17.11.6 in datasheet)
      */
   TCCR2A = 0;
   TCCR2B |= 1 << CS22;
@@ -54,8 +58,8 @@ void setup() {
 
     /**
      * ANALOG READ
-     * set the ADC Multiplexer Selection Register to 01000010 for internal reference voltage (0100) and arduino pin A2 (0010) see tables 23.3 and 23.4 in datasheet
-     * set the ADC Control and Status Register to 10000011  for enable (10000) and 8-bit prescalar (0011)
+     * set the ADC Multiplexer Selection Register to 01000010 for internal reference voltage (0100) and arduino pin A2 (0010) (see tables 23.3 and 23.4 in datasheet)
+     * set the ADC Control and Status Register to 10000011  for enable (10000) and 8-bit prescalar (0011) (see 23.9.2 and table 23.5 in datasheet)
      */
   ADMUX = 0;
   ADMUX |= 1 << REFS0;
@@ -68,9 +72,9 @@ void setup() {
 
     /**
      * FAST PWM (counter goes to 255, set OCR to percent of overflow to define duty cycle)
-     * set Timer/Counter Control Register 0A to 10000011 for Non-Inverted (1000) Fast PWM (0011) on output A
-     * set cs bits of Timer/Counter Control Register 0B to 011 for a prescalar of 64 --> 976.6Hz
-     * set Output Compare Register for Timer 0 output A to the desired duty cycle (0-255)
+     * set Timer/Counter Control Register 0A to 10000011 for Non-Inverted (1000) Fast PWM (0011) on output A (see section 14.9.1 in datasheet)
+     * set cs bits of Timer/Counter Control Register 0B to 011 for a prescalar of 64 --> (about 1000Hz) --[ 16mHz crystal / 64 prescalar / 255 pulses = 980.4Hz -overflows per second- ]-- (see table 14.9 in datasheet)
+     * set Output Compare Register for Timer 0 output A to the desired duty cycle (0-255) (see section 14.7.3 in datasheet)
      */
   TCCR0A |= 1 << COM0A1; 
   TCCR0A |= 1 << WGM01;
@@ -89,6 +93,7 @@ void loop() {
   
     /**
      * Take an analog reading of what's on port A2
+     * (see chapter 23 in datasheet)
      */
   uint8_t x = 0; //dummy counter
   const uint8_t samples = 50;
@@ -128,6 +133,10 @@ void loop() {
 
 
 
+/**
+ * INTERRUPT VECTORS
+ * (see table 11.1 in datasheet)
+ */
 ISR (PCINT2_vect){
     /**
      * if port reads high on pin button is connected to turn LED on, else turn it off
