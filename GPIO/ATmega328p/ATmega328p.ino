@@ -29,7 +29,10 @@ void setup() {
      * set Data Direction Register for Port-D to 10100000 so 5 and 7 are output, rest are input (see 13.4.2 to 13.4.10 in datasheet)
      */
   DDRD |= 1 << RED;
+  //*((volatile uint8_t*)0x2A) |= 1 << RED; //alternativly dereference memory location 42, same location in datasheet
   DDRD |= 1 << GREEN;
+  //*((volatile uint8_t*)0x2A) |= 1 << GREEN; //alternativly dereference memory location 42, same location in datasheet
+  
 
     /**
      * HARDWARE INTERRUPTS
